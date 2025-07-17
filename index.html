@@ -176,49 +176,46 @@
     }
 
     function updateCharacter() {
-      const recentTotalEl = document.getElementById("recentTotal");
-      const levelEl = document.getElementById("charLevel");
-      const messageEl = document.getElementById("charMessage");
-      const imgEl = document.getElementById("charImage");
+  const recentTotalEl = document.getElementById("recentTotal");
+  const levelEl = document.getElementById("charLevel");
+  const messageEl = document.getElementById("charMessage");
+  const imgEl = document.getElementById("charImage");
 
-      const recentTotal = getRecent7DaysSteps();
-      recentTotalEl.textContent = `直近7日間の合計歩数: ${recentTotal} 歩`;
+  const recentTotal = getRecent7DaysSteps();
+  recentTotalEl.textContent = `直近7日間の合計歩数: ${recentTotal} 歩`;
 
-      let level = 1;
-      let message = "残念…もっと歩こう！";
-      let image = "./shirokuma_sleep.png";
+  let level = 1;
+  let message = "残念…もっと歩こう！";
+  let image = "./shirokuma_sleep.png";
 
-      if (recentTotal > 1000) {
-        level = 2;
-        message = "成長してきたよ！";
-        image = "./animal_komimi_tobinezumi.png";
+  if (recentTotal > 1000) {
+    level = 2;
+    message = "成長してきたよ！";
+    image = "./animal_komimi_tobinezumi.png";
 
-        if (recentTotal >= 3000) {
-          level = 3;
-          message = "かなり歩いたね！";
-          image = "./animal_uma_kodomo.png";
-        }
-        if (recentTotal >= 5000) {
-          level = 4;
-          message = "どんどん強くなってきた！";
-          image = "./animal_horse_thoroughbred_white.png";
-        }
-        if (recentTotal >= 10000) {
-          level = 5;
-          message = "最終進化！すごい！";
-          image = "./fantasy_unicorn_rainbow.png";
-        }
-      }
-
-      levelEl.textContent = `レベル: ${level}`;
-      messageEl.textContent = message;
-      imgEl.src = image;
-      imgEl.alt = `キャラクター レベル${level}`;
+    if (recentTotal >= 3000) {
+      level = 3;
+      message = "かなり歩いたね！";
+      image = "./animal_uma_kodomo.png";
     }
+    if (recentTotal >= 5000) {
+      level = 4;
+      message = "どんどん強くなってきた！";
+      image = "./animal_horse_thoroughbred_white.png";
+    }
+    if (recentTotal >= 10000) {
+      level = 5;
+      message = "最終進化！すごい！";
+      image = "./fantasy_unicorn_rainbow.png";
+    }
+  }
 
-    // 初期表示
-    updateChart();
-    updateCharacter();
+  levelEl.textContent = `レベル: ${level}`;  // ここは必ず表示
+  messageEl.textContent = message;
+  imgEl.src = image;
+  imgEl.alt = `キャラクター レベル${level}`;
+}
+
   </script>
 </body>
 </html>

@@ -103,20 +103,24 @@
 
       let level = 1;
       let message = 'がんばって歩こう！';
-      let image = 'https://via.placeholder.com/150?text=Lv1';
+      let image = '"C:\Users\kana0\OneDrive\デスクトップ\my_app_2025\my_app_2025\golden_egg.png"';
 
       if (total >= 10000) {
-        level = 4;
+        level = 5;
         message = '最終進化！すごい！';
-        image = 'https://via.placeholder.com/150?text=Lv4';
+        image = '"C:\Users\kana0\OneDrive\デスクトップ\my_app_2025\my_app_2025\fantasy_unicorn_rainbow.png"';
       } else if (total >= 5000) {
-        level = 3;
+        level = 4;
         message = 'どんどん強くなってきた！';
-        image = 'https://via.placeholder.com/150?text=Lv3';
+        image = '"C:\Users\kana0\OneDrive\デスクトップ\my_app_2025\my_app_2025\animal_horse_thoroughbred_white.png"';
+      }else if (total >= 3000) {
+        level = 3;
+        message = 'かなり歩いたね！';
+        image = '"C:\Users\kana0\OneDrive\デスクトップ\my_app_2025\my_app_2025\animal_uma_kodomo.png"';
       } else if (total >= 1000) {
         level = 2;
         message = '成長してきたよ！';
-        image = 'https://via.placeholder.com/150?text=Lv2';
+        image = '"C:\Users\kana0\OneDrive\デスクトップ\my_app_2025\my_app_2025\animal_komimi_tobinezumi.png"';
       }
 
       levelEl.textContent = `レベル: ${level}`;

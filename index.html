@@ -27,7 +27,21 @@
         width: 150px;
         height: auto;
     }
-    </style>
+
+    #resetButton {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 1rem;
+      cursor: pointer;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    #resetButton:hover {
+      background-color: #d32f2f;
+    }
+  </style>
 </head>
 <body>
 
@@ -43,10 +57,13 @@
     <button type="submit">保存</button>
   </form>
 
+  <!-- 追加：リセットボタン -->
+  <button type="button" id="resetButton">リセット（全データ削除）</button>
+
   <canvas id="stepChart"></canvas>
 
   <div class="character">
-    <p id="recentTotal">直近7日間の合計歩数: - 歩</p> <!-- ← 追加 -->
+    <p id="recentTotal">直近7日間の合計歩数: - 歩</p>
     <h2 id="charLevel">レベル: -</h2>
     <img id="charImage" src="" alt="キャラクター">
     <p id="charMessage">歩いてキャラクターを育てよう！</p>
@@ -129,15 +146,15 @@
         }, 0);
     }
 
-
     function updateCharacter() {
       const total = getTotalSteps();
       const levelEl = document.getElementById('charLevel');
       const messageEl = document.getElementById('charMessage');
       const imgEl = document.getElementById('charImage');
-      const recentTotalEl = document.getElementById('recentTotal'); // ← 追加
+      const recentTotalEl = document.getElementById('recentTotal'); 
+      const recentTotal = getRecent7DaysSteps();
 
-  // 直近7日間の歩数表示
+      // 直近7日間の歩数表示
       recentTotalEl.textContent = `直近7日間の合計歩数: ${recentTotal} 歩`;
 
       let level = 1;
@@ -152,7 +169,7 @@
         level = 4;
         message = 'どんどん強くなってきた！';
         image = './animal_horse_thoroughbred_white.png';
-      }else if (total >= 3000) {
+      } else if (total >= 3000) {
         level = 3;
         message = 'かなり歩いたね！';
         image = './animal_uma_kodomo.png';
@@ -162,18 +179,28 @@
         image = './animal_komimi_tobinezumi.png';
       }
 
-       // 🔽 直近7日間の合計歩数をチェック
-        const recentTotal = getRecent7DaysSteps();
-        if (recentTotal <= 1000) {
+      // 直近7日間の合計歩数をチェック（1000歩以下なら残念メッセージ）
+      if (recentTotal <= 1000) {
         message = '残念…もっと歩こう！';
         image = './shirokuma_sleep.png';
-        }
+      }
 
       levelEl.textContent = `レベル: ${level}`;
       messageEl.textContent = message;
       imgEl.src = image;
       imgEl.alt = `キャラクター レベル${level}`;
     }
+
+    // リセット機能
+    document.getElementById('resetButton').addEventListener('click', () => {
+      if (confirm('本当にすべての歩数データを削除しますか？')) {
+        localStorage.removeItem('stepData');
+        stepData = {};
+        updateChart();
+        updateCharacter();
+        alert('データをリセットしました。');
+      }
+    });
 
     // 初期表示
     updateChart();

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>歩数管理アプリ</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    label, input { margin: 5px 0; display: block; }
+    canvas { max-width: 600px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>歩数管理アプリ</h1>
+
+  <form id="stepForm">
+    <label for="date">日付:</label>
+    <input type="date" id="date" required>
+    
+    <label for="steps">歩数:</label>
+    <input type="number" id="steps" required min="0">
+    
+    <button type="submit">保存</button>
+  </form>
+
+  <canvas id="stepChart"></canvas>
+
+  <script>
+    const form = document.getElementById('stepForm');
+    const chartCanvas = document.getElementById('stepChart');
+    let stepData = loadData();
+    let chart = null;
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const date = document.getElementById('date').value;
+      const steps = parseInt(document.getElementById('steps').value);
+
+      if (!date || isNaN(steps)) return;
+
+      stepData[date] = steps;
+      saveData(stepData);
+      updateChart();
+      form.reset();
+    });
+
+    function saveData(data) {
+      localStorage.setItem('stepData', JSON.stringify(data));
+    }
+
+    function loadData() {
+      const saved = localStorage.getItem('stepData');
+      return saved ? JSON.parse(saved) : {};
+    }
+
+    function updateChart() {
+      const dates = Object.keys(stepData).sort();
+      const steps = dates.map(d => stepData[d]);
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(chartCanvas, {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: '歩数',
+            data: steps,
+            borderColor: 'blue',
+            backgroundColor: 'lightblue',
+            fill: true,
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    updateChart(); // 初期表示
+  </script>
+
+</body>
+</html>

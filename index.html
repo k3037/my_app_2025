@@ -2,31 +2,30 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>歩数育成アプリ</title>
+  <title>歩数育成アプリ（カレンダー付き）</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-    }
-
-    label,
-    input {
-      margin: 5px 0;
-      display: block;
-    }
-
-    input#date,
+    body { font-family: sans-serif; padding: 20px; max-width: 900px; margin: auto; }
+    label, input, button { margin: 5px 0; display: block; }
     button {
       font-size: 1.2em;
-      padding: 8px;
-    }
-
-    button {
+      padding: 10px;
+      width: 49%;
       cursor: pointer;
-      margin-top: 10px;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      background-color: #007bff;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #resetBtn {
+      background-color: #dc3545;
+    }
+    #resetBtn:hover {
+      background-color: #a71d2a;
     }
 
     canvas {
@@ -37,41 +36,70 @@
       margin-left: auto;
       margin-right: auto;
     }
-
     .character {
       margin-top: 20px;
       text-align: center;
     }
-
     .character img {
       width: 150px;
       height: auto;
     }
 
-    .buttons {
-      display: flex;
-      gap: 20px;
-      margin-top: 10px;
-      justify-content: center;
+    #calendar {
+      margin-top: 30px;
+      user-select: none;
     }
-
-    .buttons button {
-      flex: 1;
+    #calendar table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 900px;
+      margin: auto;
+    }
+    #calendar th, #calendar td {
+      border: 1px solid #aaa;
+      padding: 5px;
+      width: 14.28%;
+      height: 70px;
+      vertical-align: top;
+      cursor: pointer;
+      position: relative;
+      box-sizing: border-box;
+    }
+    #calendar th {
+      background-color: #f0f0f0;
+      cursor: default;
+    }
+    #calendar td.selected {
+      background-color: #007bff;
+      color: white;
+    }
+    #calendar td.today {
+      border: 2px solid #007bff;
+    }
+    #calendar .day-number {
+      font-weight: bold;
+    }
+    #calendar .steps {
+      font-size: 0.8em;
+      color: #555;
+      margin-top: 4px;
+      white-space: nowrap;
     }
   </style>
 </head>
 <body>
-  <h1>歩数育成アプリ</h1>
+
+  <h1>歩数育成アプリ（カレンダー付き）</h1>
 
   <form id="stepForm">
     <label for="date">日付:</label>
-    <input type="text" id="date" required placeholder="日付を選択してください" autocomplete="off" />
-
+    <input type="date" id="date" required />
+    
     <label for="steps">歩数:</label>
     <input type="number" id="steps" required min="0" />
-
-    <div class="buttons">
-      <button type="submit">保存</button>
+    
+    <div style="display:flex; justify-content: space-between;">
+      <button type="submit" id="saveBtn">保存</button>
       <button type="button" id="resetBtn">リセット</button>
     </div>
   </form>
@@ -85,137 +113,217 @@
     <p id="charMessage">歩いてキャラクターを育てよう！</p>
   </div>
 
-  <script>
-    flatpickr("#date", {
-      dateFormat: "Y-m-d",
-      maxDate: "today",
-    });
+  <div id="calendar"></div>
 
-    const form = document.getElementById("stepForm");
-    const chartCanvas = document.getElementById("stepChart");
-    const resetBtn = document.getElementById("resetBtn");
+  <script>
+    const form = document.getElementById('stepForm');
+    const chartCanvas = document.getElementById('stepChart');
+    const calendarEl = document.getElementById('calendar');
+    const dateInput = document.getElementById('date');
+    const stepsInput = document.getElementById('steps');
+    const resetBtn = document.getElementById('resetBtn');
+
     let stepData = loadData();
     let chart = null;
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const date = document.getElementById("date").value;
-      const steps = parseInt(document.getElementById("steps").value);
-      if (!date || isNaN(steps)) return;
-
-      stepData[date] = steps;
-      saveData(stepData);
-      updateChart();
-      updateCharacter();
-      form.reset();
-    });
-
-    resetBtn.addEventListener("click", () => {
-      if (confirm("全ての歩数データをリセットしてもよろしいですか？")) {
-        stepData = {};
-        saveData(stepData);
-        updateChart();
-        updateCharacter();
-      }
-    });
-
+    // --- 保存・ロード ---
     function saveData(data) {
-      localStorage.setItem("stepData", JSON.stringify(data));
+      localStorage.setItem('stepData', JSON.stringify(data));
     }
-
     function loadData() {
-      const saved = localStorage.getItem("stepData");
+      const saved = localStorage.getItem('stepData');
       return saved ? JSON.parse(saved) : {};
     }
 
-    function getRecent7DaysSteps() {
-      const today = new Date();
-      const recent7 = [];
-
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        const dateStr = d.toISOString().split("T")[0];
-        recent7.push(dateStr);
-      }
-
-      return recent7.reduce((sum, date) => {
-        return sum + (stepData[date] || 0);
-      }, 0);
+    // --- 総歩数 ---
+    function getTotalSteps() {
+      return Object.values(stepData).reduce((sum, steps) => sum + steps, 0);
     }
 
+    // --- 直近7日間歩数合計 ---
+    function getRecent7DaysSteps() {
+      const today = new Date();
+      let sum = 0;
+      for(let i = 0; i < 7; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dateStr = d.toISOString().slice(0,10);
+        sum += stepData[dateStr] || 0;
+      }
+      return sum;
+    }
+
+    // --- チャート更新 ---
     function updateChart() {
       const dates = Object.keys(stepData).sort();
-      const steps = dates.map((d) => stepData[d]);
+      const steps = dates.map(d => stepData[d]);
 
       if (chart) chart.destroy();
 
       chart = new Chart(chartCanvas, {
-        type: "line",
+        type: 'line',
         data: {
           labels: dates,
-          datasets: [
-            {
-              label: "歩数",
-              data: steps,
-              borderColor: "blue",
-              backgroundColor: "lightblue",
-              fill: true,
-            },
-          ],
+          datasets: [{
+            label: '歩数',
+            data: steps,
+            borderColor: 'blue',
+            backgroundColor: 'lightblue',
+            fill: true,
+          }]
         },
         options: {
           responsive: true,
           scales: {
             y: {
-              beginAtZero: true,
-            },
-          },
-        },
+              beginAtZero: true
+            }
+          }
+        }
       });
     }
 
+    // --- キャラクター表示更新 ---
     function updateCharacter() {
-  const recentTotalEl = document.getElementById("recentTotal");
-  const levelEl = document.getElementById("charLevel");
-  const messageEl = document.getElementById("charMessage");
-  const imgEl = document.getElementById("charImage");
+      const recentTotal = getRecent7DaysSteps();
+      const levelEl = document.getElementById('charLevel');
+      const messageEl = document.getElementById('charMessage');
+      const imgEl = document.getElementById('charImage');
+      const recentTotalEl = document.getElementById('recentTotal');
 
-  const recentTotal = getRecent7DaysSteps();
-  recentTotalEl.textContent = `直近7日間の合計歩数: ${recentTotal} 歩`;
+      recentTotalEl.textContent = `直近7日間の合計歩数: ${recentTotal} 歩`;
 
-  let level = 1;
-  let message = "残念…もっと歩こう！";
-  let image = "./shirokuma_sleep.png";
+      let level = '-';
+      let message = '残念…もっと歩こう！';
+      let image = './shirokuma_sleep.png';
 
-  if (recentTotal > 1000) {
-    level = 2;
-    message = "成長してきたよ！";
-    image = "./animal_komimi_tobinezumi.png";
+      if (recentTotal > 1000 && recentTotal < 3000) {
+        level = 2;
+        message = '成長してきたよ！';
+        image = './animal_komimi_tobinezumi.png';
+      } else if (recentTotal >= 3000 && recentTotal < 5000) {
+        level = 3;
+        message = 'かなり歩いたね！';
+        image = './animal_uma_kodomo.png';
+      } else if (recentTotal >= 5000 && recentTotal < 10000) {
+        level = 4;
+        message = 'どんどん強くなってきた！';
+        image = './animal_horse_thoroughbred_white.png';
+      } else if (recentTotal >= 10000) {
+        level = 5;
+        message = '最終進化！すごい！';
+        image = './fantasy_unicorn_rainbow.png';
+      }
 
-    if (recentTotal >= 3000) {
-      level = 3;
-      message = "かなり歩いたね！";
-      image = "./animal_uma_kodomo.png";
+      levelEl.textContent = level === '-' ? '' : `レベル: ${level}`;
+      messageEl.textContent = message;
+      imgEl.src = image;
+      imgEl.alt = level === '-' ? 'キャラクター' : `キャラクター レベル${level}`;
     }
-    if (recentTotal >= 5000) {
-      level = 4;
-      message = "どんどん強くなってきた！";
-      image = "./animal_horse_thoroughbred_white.png";
-    }
-    if (recentTotal >= 10000) {
-      level = 5;
-      message = "最終進化！すごい！";
-      image = "./fantasy_unicorn_rainbow.png";
-    }
-  }
 
-  levelEl.textContent = `レベル: ${level}`;  // ここは必ず表示
-  messageEl.textContent = message;
-  imgEl.src = image;
-  imgEl.alt = `キャラクター レベル${level}`;
-}
+    // --- カレンダー描画 ---
+    function renderCalendar(year, month) {
+      calendarEl.innerHTML = '';
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const firstWeekDay = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+
+      let html = '<table><thead><tr>';
+      ['日','月','火','水','木','金','土'].forEach(day => {
+        html += `<th>${day}</th>`;
+      });
+      html += '</tr></thead><tbody><tr>';
+
+      // 空白セル
+      for(let i=0; i < firstWeekDay; i++) {
+        html += '<td></td>';
+      }
+
+      for(let day=1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const steps = stepData[dateStr] || '';
+        const isToday = dateStr === (new Date()).toISOString().slice(0,10);
+        const isSelected = dateStr === dateInput.value;
+
+        if ((firstWeekDay + day -1) % 7 === 0 && day !== 1) {
+          html += '</tr><tr>';
+        }
+
+        html += `<td data-date="${dateStr}" class="${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}">`;
+        html += `<div class="day-number">${day}日</div>`;
+        html += `<div class="steps">${steps ? steps + '歩' : ''}</div>`;
+        html += '</td>';
+      }
+
+      // 月末余白
+      const totalCells = firstWeekDay + daysInMonth;
+      const remainCells = (7 - (totalCells % 7)) % 7;
+      for(let i=0; i < remainCells; i++) {
+        html += '<td></td>';
+      }
+
+      html += '</tr></tbody></table>';
+      calendarEl.innerHTML = html;
+
+      // クリックイベント追加
+      calendarEl.querySelectorAll('td[data-date]').forEach(td => {
+        td.addEventListener('click', () => {
+          dateInput.value = td.dataset.date;
+          stepsInput.focus();
+          renderCalendar(year, month); // 選択ハイライト更新
+        });
+      });
+    }
+
+    // --- 初期日付セット ---
+    function initDateInput() {
+      if (!dateInput.value) {
+        dateInput.value = (new Date()).toISOString().slice(0,10);
+      }
+    }
+
+    // --- イベント ---
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const date = dateInput.value;
+      const steps = parseInt(stepsInput.value);
+      if (!date || isNaN(steps) || steps < 0) return;
+
+      stepData[date] = steps;
+      saveData(stepData);
+      updateChart();
+      updateCharacter();
+      renderCalendar(dateInput.valueAsDate.getFullYear(), dateInput.valueAsDate.getMonth());
+      form.reset();
+      dateInput.value = date; // 日付は維持
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (confirm('本当にすべての歩数データをリセットしますか？')) {
+        stepData = {};
+        saveData(stepData);
+        updateChart();
+        updateCharacter();
+        renderCalendar((new Date()).getFullYear(), (new Date()).getMonth());
+      }
+    });
+
+    dateInput.addEventListener('change', () => {
+      const d = dateInput.valueAsDate;
+      if (!d) return;
+      renderCalendar(d.getFullYear(), d.getMonth());
+    });
+
+    // --- 初期表示 ---
+    initDateInput();
+    updateChart();
+    updateCharacter();
+    const today = new Date();
+    renderCalendar(today.getFullYear(), today.getMonth());
 
   </script>
+
 </body>
 </html>

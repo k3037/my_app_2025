@@ -6,11 +6,28 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
+
     label, input { margin: 5px 0; display: block; }
-    canvas { max-width: 600px; margin-top: 20px; }
-    .character { margin-top: 20px; text-align: center; }
-    .character img { width: 150px; height: auto; }
-  </style>
+
+    canvas {
+        width: 100% !important;
+        max-width: 900px;
+        margin-top: 20px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .character {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .character img {
+        width: 150px;
+        height: auto;
+    }
+    </style>
 </head>
 <body>
 
@@ -103,7 +120,7 @@
 
       let level = 1;
       let message = 'がんばって歩こう！';
-      let image = '"C:\Users\kana0\OneDrive\デスクトップ\my_app_2025\my_app_2025\golden_egg.png"';
+      let image = './golden_egg.png';
 
       if (total >= 10000) {
         level = 5;
@@ -122,6 +139,13 @@
         message = '成長してきたよ！';
         image = './animal_komimi_tobinezumi.png';
       }
+
+       // 🔽 直近7日間の合計歩数をチェック
+        const recentTotal = getRecent7DaysSteps();
+        if (recentTotal <= 1000) {
+        message = '残念…もっと歩こう！';
+        image = './shirokuma_sleep.png';
+        }
 
       levelEl.textContent = `レベル: ${level}`;
       messageEl.textContent = message;

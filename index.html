@@ -9,6 +9,14 @@
 
     label, input { margin: 5px 0; display: block; }
 
+    button {
+      font-size: 18px;
+      padding: 8px 16px;
+      margin-top: 10px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
     canvas {
         width: 100% !important;
         max-width: 900px;
@@ -27,32 +35,6 @@
         width: 150px;
         height: auto;
     }
-
-    button {
-      margin-top: 10px;
-      padding: 12px 24px;
-      font-size: 1.2rem;
-      cursor: pointer;
-      border: none;
-      border-radius: 4px;
-      transition: background-color 0.3s ease;
-    }
-
-    #stepForm button {
-      background-color: #1976d2;
-      color: white;
-    }
-    #stepForm button:hover {
-      background-color: #1565c0;
-    }
-
-    #resetButton {
-      background-color: #f44336;
-      color: white;
-    }
-    #resetButton:hover {
-      background-color: #d32f2f;
-    }
   </style>
 </head>
 <body>
@@ -67,9 +49,8 @@
     <input type="number" id="steps" required min="0">
 
     <button type="submit">保存</button>
+    <button type="button" id="resetBtn" style="background-color: #f44336; color: white;">リセット</button>
   </form>
-
-  <button type="button" id="resetButton">リセット（全データ削除）</button>
 
   <canvas id="stepChart"></canvas>
 
@@ -83,6 +64,8 @@
   <script>
     const form = document.getElementById('stepForm');
     const chartCanvas = document.getElementById('stepChart');
+    const resetBtn = document.getElementById('resetBtn');
+
     let stepData = loadData();
     let chart = null;
 
@@ -99,6 +82,15 @@
       form.reset();
     });
 
+    resetBtn.addEventListener('click', () => {
+      if (confirm('歩数データをすべてリセットしますか？')) {
+        stepData = {};
+        saveData(stepData);
+        updateChart();
+        updateCharacter();
+      }
+    });
+
     function saveData(data) {
       localStorage.setItem('stepData', JSON.stringify(data));
     }
@@ -106,10 +98,6 @@
     function loadData() {
       const saved = localStorage.getItem('stepData');
       return saved ? JSON.parse(saved) : {};
-    }
-
-    function getTotalSteps() {
-      return Object.values(stepData).reduce((sum, steps) => sum + steps, 0);
     }
 
     function updateChart() {
@@ -142,57 +130,54 @@
     }
 
     function getRecent7DaysSteps() {
-        const today = new Date();
-        const recent7 = [];
+      const today = new Date();
+      const recent7 = [];
 
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(today);
-            d.setDate(today.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
-            recent7.push(dateStr);
-        }
+      for (let i = 0; i < 7; i++) {
+          const d = new Date(today);
+          d.setDate(today.getDate() - i);
+          const dateStr = d.toISOString().split('T')[0];
+          recent7.push(dateStr);
+      }
 
-        return recent7.reduce((sum, date) => {
-            return sum + (stepData[date] || 0);
-        }, 0);
+      return recent7.reduce((sum, date) => {
+          return sum + (stepData[date] || 0);
+      }, 0);
     }
 
     function updateCharacter() {
-      const total = getTotalSteps();
+      const recentTotal = getRecent7DaysSteps();
       const levelEl = document.getElementById('charLevel');
       const messageEl = document.getElementById('charMessage');
       const imgEl = document.getElementById('charImage');
-      const recentTotalEl = document.getElementById('recentTotal'); 
-      const recentTotal = getRecent7DaysSteps();
+      const recentTotalEl = document.getElementById('recentTotal');
 
-      // 直近7日間の歩数表示
       recentTotalEl.textContent = `直近7日間の合計歩数: ${recentTotal} 歩`;
 
-      let level = 1;
-      let message = 'がんばって歩こう！';
-      let image = './golden_egg.png';
+      let level;
+      let message;
+      let image;
 
-      if (total >= 10000) {
-        level = 5;
-        message = '最終進化！すごい！';
-        image = './fantasy_unicorn_rainbow.png';
-      } else if (total >= 5000) {
-        level = 4;
-        message = 'どんどん強くなってきた！';
-        image = './animal_horse_thoroughbred_white.png';
-      } else if (total >= 3000) {
-        level = 3;
-        message = 'かなり歩いたね！';
-        image = './animal_uma_kodomo.png';
-      } else if (total >= 1000) {
+      if (recentTotal <= 1000) {
+        level = '-';
+        message = '残念…もっと歩こう！';
+        image = './shirokuma_sleep.png';
+      } else if (recentTotal < 3000) {
         level = 2;
         message = '成長してきたよ！';
         image = './animal_komimi_tobinezumi.png';
-      }
-
-      if (recentTotal <= 1000) {
-        message = '残念…もっと歩こう！';
-        image = './shirokuma_sleep.png';
+      } else if (recentTotal < 5000) {
+        level = 3;
+        message = 'かなり歩いたね！';
+        image = './animal_uma_kodomo.png';
+      } else if (recentTotal < 10000) {
+        level = 4;
+        message = 'どんどん強くなってきた！';
+        image = './animal_horse_thoroughbred_white.png';
+      } else {
+        level = 5;
+        message = '最終進化！すごい！';
+        image = './fantasy_unicorn_rainbow.png';
       }
 
       levelEl.textContent = `レベル: ${level}`;
@@ -200,16 +185,6 @@
       imgEl.src = image;
       imgEl.alt = `キャラクター レベル${level}`;
     }
-
-    document.getElementById('resetButton').addEventListener('click', () => {
-      if (confirm('本当にすべての歩数データを削除しますか？')) {
-        localStorage.removeItem('stepData');
-        stepData = {};
-        updateChart();
-        updateCharacter();
-        alert('データをリセットしました。');
-      }
-    });
 
     // 初期表示
     updateChart();

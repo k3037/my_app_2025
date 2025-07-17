@@ -2,29 +2,37 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>歩数管理アプリ</title>
+  <title>歩数育成アプリ</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
     label, input { margin: 5px 0; display: block; }
     canvas { max-width: 600px; margin-top: 20px; }
+    .character { margin-top: 20px; text-align: center; }
+    .character img { width: 150px; height: auto; }
   </style>
 </head>
 <body>
 
-  <h1>歩数管理アプリ</h1>
+  <h1>歩数育成アプリ</h1>
 
   <form id="stepForm">
     <label for="date">日付:</label>
     <input type="date" id="date" required>
-    
+
     <label for="steps">歩数:</label>
     <input type="number" id="steps" required min="0">
-    
+
     <button type="submit">保存</button>
   </form>
 
   <canvas id="stepChart"></canvas>
+
+  <div class="character">
+    <h2 id="charLevel">レベル: -</h2>
+    <img id="charImage" src="" alt="キャラクター">
+    <p id="charMessage">歩いてキャラクターを育てよう！</p>
+  </div>
 
   <script>
     const form = document.getElementById('stepForm');
@@ -36,12 +44,12 @@
       e.preventDefault();
       const date = document.getElementById('date').value;
       const steps = parseInt(document.getElementById('steps').value);
-
       if (!date || isNaN(steps)) return;
 
       stepData[date] = steps;
       saveData(stepData);
       updateChart();
+      updateCharacter();
       form.reset();
     });
 
@@ -52,6 +60,10 @@
     function loadData() {
       const saved = localStorage.getItem('stepData');
       return saved ? JSON.parse(saved) : {};
+    }
+
+    function getTotalSteps() {
+      return Object.values(stepData).reduce((sum, steps) => sum + steps, 0);
     }
 
     function updateChart() {
@@ -83,7 +95,39 @@
       });
     }
 
-    updateChart(); // 初期表示
+    function updateCharacter() {
+      const total = getTotalSteps();
+      const levelEl = document.getElementById('charLevel');
+      const messageEl = document.getElementById('charMessage');
+      const imgEl = document.getElementById('charImage');
+
+      let level = 1;
+      let message = 'がんばって歩こう！';
+      let image = 'https://via.placeholder.com/150?text=Lv1';
+
+      if (total >= 10000) {
+        level = 4;
+        message = '最終進化！すごい！';
+        image = 'https://via.placeholder.com/150?text=Lv4';
+      } else if (total >= 5000) {
+        level = 3;
+        message = 'どんどん強くなってきた！';
+        image = 'https://via.placeholder.com/150?text=Lv3';
+      } else if (total >= 1000) {
+        level = 2;
+        message = '成長してきたよ！';
+        image = 'https://via.placeholder.com/150?text=Lv2';
+      }
+
+      levelEl.textContent = `レベル: ${level}`;
+      messageEl.textContent = message;
+      imgEl.src = image;
+      imgEl.alt = `キャラクター レベル${level}`;
+    }
+
+    // 初期表示
+    updateChart();
+    updateCharacter();
   </script>
 
 </body>

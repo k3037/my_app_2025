@@ -46,6 +46,7 @@
   <canvas id="stepChart"></canvas>
 
   <div class="character">
+    <p id="recentTotal">直近7日間の合計歩数: - 歩</p> <!-- ← 追加 -->
     <h2 id="charLevel">レベル: -</h2>
     <img id="charImage" src="" alt="キャラクター">
     <p id="charMessage">歩いてキャラクターを育てよう！</p>
@@ -112,11 +113,32 @@
       });
     }
 
+    function getRecent7DaysSteps() {
+        const today = new Date();
+        const recent7 = [];
+
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            recent7.push(dateStr);
+        }
+
+        return recent7.reduce((sum, date) => {
+            return sum + (stepData[date] || 0);
+        }, 0);
+    }
+
+
     function updateCharacter() {
       const total = getTotalSteps();
       const levelEl = document.getElementById('charLevel');
       const messageEl = document.getElementById('charMessage');
       const imgEl = document.getElementById('charImage');
+      const recentTotalEl = document.getElementById('recentTotal'); // ← 追加
+
+  // 直近7日間の歩数表示
+      recentTotalEl.textContent = `直近7日間の合計歩数: ${recentTotal} 歩`;
 
       let level = 1;
       let message = 'がんばって歩こう！';

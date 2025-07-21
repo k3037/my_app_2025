@@ -89,7 +89,7 @@
 </head>
 <body>
 
-  <h1>歩数育成アプリ（カレンダー付き）</h1>
+  <h1>歩数育成アプリ</h1>
 
   <form id="stepForm">
     <label for="date">日付:</label>
@@ -271,6 +271,7 @@
       calendarEl.querySelectorAll('td[data-date]').forEach(td => {
         td.addEventListener('click', () => {
           dateInput.value = td.dataset.date;
+          stepsInput.value = stepData[td.dataset.date] || '';
           stepsInput.focus();
           renderCalendar(year, month); // 選択ハイライト更新
         });
